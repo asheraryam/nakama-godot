@@ -2,7 +2,6 @@
 #define NAKAMAGODOT_H
 
 #include <Godot.hpp>
-//#include <Reference.hpp>
 #include <Node.hpp>
 
 #include "nakama-cpp/Nakama.h"
@@ -18,18 +17,10 @@ namespace godot {
 
         protected:
             DefaultClientParameters parameters;
-            NClientPtr _NClient;
-            NSessionPtr _NSession;
-            NRtClientPtr _NRtClient;
+            NClientPtr client;
+            NSessionPtr session;
+            NRtClientPtr rtClient;
             NRtDefaultClientListener _NRtListener;
-
-            std::function<void(NSessionPtr)> authenticated_success_callback = [this](NSessionPtr session) {
-                authenticated(session); 
-            };
-
-            std::function<void(const NError&)> authenticated_error_callback = [this](const NError& error) {
-                Godot::print(godot::String("Authentication unsuccesful. Check the logs!"));
-            };
 
         private:
             void authenticated(NSessionPtr);
@@ -48,12 +39,17 @@ namespace godot {
             void login_or_register();
             void authenticate_email(String email, String password, String username);
             void connect_realtime_client();
+            bool is_realtime_client_connected();
+            bool is_session_expired();
 
+            // Chat
             void join_chat_room(String roomName);
             void write_chat_message(String channelId, String content);
 
-            bool is_realtime_client_connected();
-            bool is_session_expired();
+            // Storage
+            void store_object(String collection, String key, Dictionary value);
+            void fetch_object(String collection, String key);
+            void remove_object(String collection, String key);
     };
 }
 
