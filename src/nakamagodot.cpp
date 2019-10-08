@@ -38,6 +38,8 @@ void NakamaGodot::_register_methods() {
     register_method("remove_object", &NakamaGodot::remove_object);
     register_method("remove_objects", &NakamaGodot::remove_objects);
 
+    register_method("send_rpc", &NakamaGodot::send_rpc);
+
     // Signals
     register_signal<NakamaGodot>("authenticated");
     register_signal<NakamaGodot>("authentication_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
@@ -49,7 +51,8 @@ void NakamaGodot::_register_methods() {
     register_signal<NakamaGodot>("storage_read_complete", "objects", GODOT_VARIANT_TYPE_DICTIONARY, "error", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("storage_write_complete", "error", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("storage_remove_complete", "error", GODOT_VARIANT_TYPE_DICTIONARY);
-
+    register_signal<NakamaGodot>("rpc_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("rpc_complete", "rpc_id", GODOT_VARIANT_TYPE_STRING, "response", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("chat_message_recieved", "channel_id", GODOT_VARIANT_TYPE_STRING, "message_id", GODOT_VARIANT_TYPE_STRING, "message_code", GODOT_VARIANT_TYPE_INT, "sender_id", GODOT_VARIANT_TYPE_STRING, "username", GODOT_VARIANT_TYPE_STRING, "content", GODOT_VARIANT_TYPE_STRING);
 }
 
@@ -307,5 +310,24 @@ void NakamaGodot::remove_object_list(std::vector<NDeleteStorageObjectId> ids)
         ids,
         success_callback,  
         err_callback
+    );
+}
+
+void NakamaGodot::send_rpc(String rpcId, Dictionary payload)
+{
+    auto errCallback = [this](const NError& error)
+    {
+        emit_signal("rpc_failed", errToDict(error));
+    };
+    auto successCallback = [this](const NRpc& rpc)
+    {
+        emit_signal("rpc_complete", String(rpc.id.c_str()), String(rpc.payload.c_str()));
+    };
+    client->rpc(
+        session, 
+        rpcId.utf8().get_data(), 
+        payload.to_json().utf8().get_data(), 
+        successCallback, 
+        errCallback
     );
 }

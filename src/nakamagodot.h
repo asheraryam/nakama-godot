@@ -56,6 +56,9 @@ namespace godot {
             void fetch_objects(String collection, Array keys);
             void remove_object(String collection, String key);
             void remove_objects(String collection, Array keys);
+
+            // RPC
+            void send_rpc(String rpcId, Dictionary payload);
     };
 }
 
