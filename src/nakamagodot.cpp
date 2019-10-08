@@ -34,6 +34,7 @@ void NakamaGodot::_register_methods() {
     register_method("store_object", &NakamaGodot::store_object);
     register_method("store_objects", &NakamaGodot::store_objects);
     register_method("fetch_objects", &NakamaGodot::fetch_object);
+    register_method("fetch_objects", &NakamaGodot::fetch_objects);
     register_method("remove_object", &NakamaGodot::remove_object);
     register_method("remove_objects", &NakamaGodot::remove_objects);
 
@@ -222,6 +223,31 @@ void NakamaGodot::store_object_list(std::vector<NStorageObjectWrite> objects)
 
 void NakamaGodot::fetch_object(String collection, String key) 
 {
+    std::vector<NReadStorageObjectId> objectIds;
+    NReadStorageObjectId id;
+    id.collection = collection.utf8().get_data();
+    id.key = key.utf8().get_data();
+    id.userId = session->getUserId();
+    objectIds.push_back(id);
+    fetch_object_list(objectIds);
+}
+
+void NakamaGodot::fetch_objects(String collection, Array keys)
+{
+    std::vector<NReadStorageObjectId> objectIds;
+    for (int i = 0; i < keys.size(); i++)
+    {
+        auto key = keys[i].operator String();
+        NReadStorageObjectId id;
+        id.collection = collection.utf8().get_data();
+        id.key = key.utf8().get_data();
+        objectIds.push_back(id);
+    }
+    fetch_object_list(objectIds);
+}
+
+void NakamaGodot::fetch_object_list(std::vector<NReadStorageObjectId> ids)
+{
     auto err_callback = [this](const NError& error)
     {
         emit_signal("storage_read_complete", Dictionary(), errToDict(error));
@@ -235,14 +261,8 @@ void NakamaGodot::fetch_object(String collection, String key)
         }
         emit_signal("storage_read_complete", d, Dictionary());
     };
-    std::vector<NReadStorageObjectId> objectIds;
-    NReadStorageObjectId id;
-    id.collection = collection.utf8().get_data();
-    id.key = key.utf8().get_data();
-    id.userId = session->getUserId();
-    objectIds.push_back(id);
     client->readStorageObjects(
-        session, objectIds, 
+        session, ids, 
         success_callback,
         err_callback
     );
