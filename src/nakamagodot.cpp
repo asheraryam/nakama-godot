@@ -178,6 +178,27 @@ void NakamaGodot::store_object(String collection, String key, Dictionary value) 
     write.key = key.utf8().get_data();
     write.value = value.to_json().utf8().get_data();
     objects.push_back(write);
+    store_object_list(objects);
+}
+
+void NakamaGodot::store_objects(String collection, Dictionary kvps) {
+    std::vector<NStorageObjectWrite> objects;
+    auto keys = kvps.keys();
+    for (int i = 0; i < keys.size(); i++)
+    {
+        NStorageObjectWrite write;
+        write.collection = collection.utf8().get_data();
+        auto key = keys[i].operator String();
+        auto value = Dictionary(kvps[keys[i]]);
+        write.key = key.utf8().get_data();
+        write.value = value.to_json().utf8().get_data();
+        objects.push_back(write);    
+    }
+    store_object_list(objects);
+}
+
+void NakamaGodot::store_object_list(std::vector<NStorageObjectWrite> objects)
+{
     auto success_callback = [this](const auto& _) 
     {
         emit_signal("storage_write_complete", Dictionary()); 
@@ -192,6 +213,7 @@ void NakamaGodot::store_object(String collection, String key, Dictionary value) 
         err_callback
     );
 }
+
 void NakamaGodot::fetch_object(String collection, String key) 
 {
     auto err_callback = [this](const NError& error)
@@ -227,6 +249,25 @@ void NakamaGodot::remove_object(String collection, String key)
     id.collection = collection.utf8().get_data();
     id.key = key.utf8().get_data();
     objectIds.push_back(id);
+    remove_object_list(objectIds);
+}
+
+void NakamaGodot::remove_objects(String collection, Array keys)
+{
+    std::vector<NDeleteStorageObjectId> objectIds;
+    for (int i = 0; i < keys.size(); i++)
+    {
+        auto key = keys[i].operator String();
+        NDeleteStorageObjectId id;
+        id.collection = collection.utf8().get_data();
+        id.key = key.utf8().get_data();
+        objectIds.push_back(id);
+    }
+    remove_object_list(objectIds);
+}
+
+void NakamaGodot::remove_object_list(std::vector<NDeleteStorageObjectId> ids)
+{
     auto err_callback = [this](const NError& error)
     { 
         emit_signal("storage_remove_complete", errToDict(error));
@@ -237,7 +278,7 @@ void NakamaGodot::remove_object(String collection, String key)
     };
     client->deleteStorageObjects(
         session, 
-        objectIds,
+        ids,
         success_callback,  
         err_callback
     );

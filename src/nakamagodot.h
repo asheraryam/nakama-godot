@@ -24,6 +24,8 @@ namespace godot {
 
         private:
             void authenticated(NSessionPtr);
+            void store_object_list(std::vector<NStorageObjectWrite>);
+            void remove_object_list(std::vector<NDeleteStorageObjectId>);
 
         public:
             static void _register_methods();
@@ -48,8 +50,10 @@ namespace godot {
 
             // Storage
             void store_object(String collection, String key, Dictionary value);
+            void store_objects(String collection, Dictionary kvps);
             void fetch_object(String collection, String key);
             void remove_object(String collection, String key);
+            void remove_objects(String collection, Array keys);
     };
 }
 
