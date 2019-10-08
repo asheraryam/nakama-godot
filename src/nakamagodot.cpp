@@ -31,6 +31,12 @@ void NakamaGodot::_register_methods() {
     register_method("is_realtime_client_connected", &NakamaGodot::is_realtime_client_connected);
     register_method("is_session_expired", &NakamaGodot::is_session_expired);
 
+    register_method("store_object", &NakamaGodot::store_object);
+    register_method("store_objects", &NakamaGodot::store_objects);
+    register_method("fetch_objects", &NakamaGodot::fetch_object);
+    register_method("remove_object", &NakamaGodot::remove_object);
+    register_method("remove_objects", &NakamaGodot::remove_objects);
+
     // Signals
     register_signal<NakamaGodot>("authenticated");
     register_signal<NakamaGodot>("authentication_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
