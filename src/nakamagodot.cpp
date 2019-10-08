@@ -133,7 +133,7 @@ bool NakamaGodot::is_session_expired() {
     return !(session && !session->isExpired());
 }
 
-void NakamaGodot::join_chat_room(String roomName) {
+void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool hidden) {
     _NRtListener.setChannelMessageCallback([this](const NChannelMessage& message) {
                 Godot::print("Recieved message on channel {0}", message.channelId.c_str());
                 Godot::print("Message content: {0}", message.content.c_str());
@@ -152,9 +152,9 @@ void NakamaGodot::join_chat_room(String roomName) {
 
     rtClient->joinChat(
             roomName.utf8().get_data(),
-            NChannelType::ROOM,
-            {},
-            {},
+            (NChannelType)type,
+            persist,
+            hidden,
             sucessJoinCallback,
             errorJoinCallback);
 }

@@ -43,7 +43,7 @@ namespace godot {
             bool is_session_expired();
 
             // Chat
-            void join_chat_room(String roomName);
+            void join_chat_room(String roomName, int type = 0, bool persist=false, bool hidden=true);
             void write_chat_message(String channelId, String content);
 
             // Storage
