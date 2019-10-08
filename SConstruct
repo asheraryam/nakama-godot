@@ -7,8 +7,9 @@ opts = Variables([], ARGUMENTS)
 env = DefaultEnvironment()
 
 # Define our options
-opts.Add(EnumVariable('target', "Compilation target", 'debug', ['d', 'debug', 'r', 'release']))
-opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', 'x11', 'linux', 'osx']))
+opts.Add(EnumVariable('target', "Compilation target", 'debug', ['debug', 'release']))
+# opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', 'x11', 'linux', 'osx']))
+opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows']))
 opts.Add(EnumVariable('p', "Compilation target, alias for 'platform'", '', ['', 'windows', 'x11', 'linux', 'osx']))
 opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", 'no'))
 opts.Add(PathVariable('target_path', 'The path where the lib is installed.', 'demo/addons/nakama-godot/bin/'))
@@ -41,28 +42,29 @@ if env['platform'] == '':
     quit();
 
 # Check our platform specifics
-if env['platform'] == "osx":
-    env['target_path'] += 'osx/'
-    cpp_library += '.osx'
-    if env['target'] in ('debug', 'd'):
-        env.Append(CCFLAGS = ['-g','-O2', '-arch', 'x86_64', '-std=c++17'])
-        env.Append(LINKFLAGS = ['-arch', 'x86_64'])
-    else:
-        env.Append(CCFLAGS = ['-g','-O3', '-arch', 'x86_64', '-std=c++17'])
-        env.Append(LINKFLAGS = ['-arch', 'x86_64'])
+# if env['platform'] == "osx":
+#     env['target_path'] += 'osx/'
+#     cpp_library += '.osx'
+#     if env['target'] in ('debug', 'd'):
+#         env.Append(CCFLAGS = ['-g','-O2', '-arch', 'x86_64', '-std=c++17'])
+#         env.Append(LINKFLAGS = ['-arch', 'x86_64'])
+#     else:
+#         env.Append(CCFLAGS = ['-g','-O3', '-arch', 'x86_64', '-std=c++17'])
+#         env.Append(LINKFLAGS = ['-arch', 'x86_64'])
 
-elif env['platform'] in ('x11', 'linux'):
-    env['target_path'] += 'x11/'
-    cpp_library += '.linux'
-    if env['target'] in ('debug', 'd'):
-        env.Append(CCFLAGS = ['-fPIC', '-g3','-Og', '-std=c++17'])
-    else:
-        env.Append(CCFLAGS = ['-fPIC', '-g','-O3', '-std=c++17'])
-    nakama_library_path += "linux/"
+# elif env['platform'] in ('x11', 'linux'):
+#     env['target_path'] += 'x11/'
+#     cpp_library += '.linux'
+#     if env['target'] in ('debug', 'd'):
+#         env.Append(CCFLAGS = ['-fPIC', '-g3','-Og', '-std=c++17'])
+#     else:
+#         env.Append(CCFLAGS = ['-fPIC', '-g','-O3', '-std=c++17'])
+#     nakama_library_path += "linux/"
 
-elif env['platform'] == "windows":
+if env['platform'] == "windows":
     env['target_path'] += 'win64/'
     cpp_library += '.windows'
+    nakama_library_path += 'win64/'
     # This makes sure to keep the session environment variables on windows,
     # that way you can run scons in a vs 2017 prompt and it will find all the required tools
     env.Append(ENV = os.environ)
@@ -73,46 +75,39 @@ elif env['platform'] == "windows":
     else:
         env.Append(CCFLAGS = ['-O2', '-EHsc', '-DNDEBUG', '-MD'])
 
-if env['target'] in ('debug', 'd'):
-    cpp_library += '.debug'
+    nakama_library_path += "v142/%s/" % env['target'].capitalize()
+
+    if env['target'] in ('debug', 'd'):
+        cpp_library += '.debug'
+    else:
+        cpp_library += '.release'
+
+    cpp_library += '.' + str(bits)
+
+
+    nlibs = os.listdir(nakama_library_path)
+    nlibs = Glob(nakama_library_path + '/*.a')
+
+    lnlibs = [nakama_library_path + x for x in [
+        'crypto.lib',
+        'ssl.lib',
+        'cpprest.lib',
+        'nakama-cpp.lib',
+        'libprotobuf.lib',
+    ]]
+
+    nlibs = [
+        'bcrypt',
+        'crypt32',
+        'httpapi',
+        'winhttp',
+        'advapi32',
+    ]
 else:
-    cpp_library += '.release'
+    print("Invalid platform.")
+    quit()
 
-cpp_library += '.' + str(bits)
 
-
-nakama_library_path += 'x' + str(bits) + '/'
-nlibs = os.listdir(nakama_library_path)
-nlibs = Glob(nakama_library_path + '/*.a')
-
-lnlibs = [nakama_library_path + x for x in [
-    'libaddress_sorting.a',
-    'libcares.a',
-    'libcrypto.a',
-    'libgpr.a',
-    #'libgrpc++.a',
-    'libgrpc.a',
-    'libnakama-cpp.a',
-    'libprotobuf.a',
-    'libssl.a',
-    'libz.a'
-]]
-
-nlibs = [
-    'libboost_date_time',
-    'libboost_regex',
-    'libboost_system',
-    #'libaddress_sorting',
-    #'libcares',
-    #'libcrypto',
-    #'libgpr',
-    'libgrpc++',
-    #'libgrpc',
-    #'libnakama-cpp',
-    #'libprotobuf',
-    #'libssl',
-    #'libz'
-]
 
 # make sure our binding library is properly includes
 env.Append(CPPPATH=['.', godot_headers_path, cpp_bindings_path + 'include/', cpp_bindings_path + 'include/core/', cpp_bindings_path + 'include/gen/', nakama_headers_path])

@@ -58,7 +58,7 @@ void NakamaGodot::authenticate_email(String email, String password, String usern
 
     bool create = true;
 
-    _NClient->authenticateEmail(std::string(email.utf8().get_data()), std::string(password.utf8().get_data()), username.utf8().get_data(), create, authenticated_success_callback, authenticated_error_callback);
+    _NClient->authenticateEmail(std::string(email.utf8().get_data()), std::string(password.utf8().get_data()), username.utf8().get_data(), create, {}, authenticated_success_callback, authenticated_error_callback);
 }
 
 void NakamaGodot::authenticated(NSessionPtr session) {
