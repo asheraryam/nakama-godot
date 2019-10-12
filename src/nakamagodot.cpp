@@ -137,7 +137,9 @@ void NakamaGodot::_register_methods() {
     register_method("create_client", &NakamaGodot::create_client);
     register_method("authenticate_email", &NakamaGodot::authenticate_email);
     register_method("connect_realtime_client", &NakamaGodot::connect_realtime_client);
+
     register_method("join_chat_room", &NakamaGodot::join_chat_room);
+    
     register_method("write_chat_message", &NakamaGodot::write_chat_message);
 
     register_method("is_realtime_client_connected", &NakamaGodot::is_realtime_client_connected);
@@ -171,6 +173,8 @@ void NakamaGodot::_register_methods() {
     register_method("block_friends", &NakamaGodot::block_friends);
 
     // Signals
+    register_signal<NakamaGodot>("realtime_client_connected");
+
     register_signal<NakamaGodot>("authenticated", "session", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("authentication_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
@@ -293,12 +297,12 @@ int NakamaGodot::connect_realtime_client() {
     bool createStatus = true;
     rtClient = client->createRtClient(port);
 
-    rtListener.setConnectCallback([]() {
-                Godot::print("Realtime client connected");
+    rtListener.setConnectCallback([this]() {
+                emit_signal("realtime_client_connected");
             });
     rtClient->setListener(&rtListener);
     rtClient->connect(session, createStatus);
-    
+
     return 0; // OK
 }
 
