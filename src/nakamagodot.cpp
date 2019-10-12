@@ -3,7 +3,8 @@
 using namespace std::placeholders;
 using namespace godot;
 
-Dictionary rtErrToDict(const NRtError& error) {
+Dictionary rtErrToDict(const NRtError& error) 
+{
     Dictionary d;
     d["code"] = (int)error.code;
     d["message"] = String(error.message.c_str());
@@ -130,7 +131,31 @@ Dictionary sessionToDict(NSessionPtr session)
     return d;
 }
 
-void NakamaGodot::_register_methods() {
+Dictionary presenceEventToDict(const NChannelPresenceEvent& event)
+{
+    Dictionary d;
+    d["channelId"] = String(event.channelId.c_str());
+    d["groupId"] = String(event.groupId.c_str());
+    d["roomName"] = String(event.roomName.c_str());
+    d["userIdOne"] = String(event.userIdOne.c_str());
+    d["userIdTwo"] = String(event.userIdTwo.c_str());
+    Array left;
+    for (auto& l : event.leaves)
+    {
+        left.append(userPresenceToDict(l));
+    }
+    d["left"] = left;
+    Array joins;
+    for (auto & j : event.joins)
+    {
+        joins.append(userPresenceToDict(j));
+    }
+    d["joins"] = joins;
+    return d;
+}
+
+void NakamaGodot::_register_methods() 
+{
     // Methods
     register_method("_process", &NakamaGodot::_process);
     register_method("create_client_default", &NakamaGodot::create_client_default);
@@ -178,6 +203,7 @@ void NakamaGodot::_register_methods() {
     register_signal<NakamaGodot>("authenticated", "session", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("authentication_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
+    register_signal<NakamaGodot>("channel_presence_event", "event", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("write_chat_message_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("chat_message_recieved", "message", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_joined", "channel", GODOT_VARIANT_TYPE_DICTIONARY);
@@ -230,15 +256,18 @@ void NakamaGodot::_register_methods() {
     register_signal<NakamaGodot>("block_friends_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 }
 
-void NakamaGodot::_init() {
+void NakamaGodot::_init() 
+{
     NLogger::init(std::make_shared<NGodotLogSink>(), NLogLevel::Debug);
 }
 
-void NakamaGodot::_process(float delta) {
+void NakamaGodot::_process(float delta) 
+{
     if (!client) return;
     time_since_last_tick += delta;
 
-    if (time_since_last_tick > 0.05) {
+    if (time_since_last_tick > 0.05) 
+    {
         client->tick();
         if (rtClient)
             rtClient->tick();
@@ -246,26 +275,25 @@ void NakamaGodot::_process(float delta) {
     }
 }
 
-NakamaGodot::NakamaGodot() {
-}
+NakamaGodot::NakamaGodot() { }
 
-NakamaGodot::~NakamaGodot() {
-    
-}
+NakamaGodot::~NakamaGodot() { }
 
-void NakamaGodot::create_client_default() {
+void NakamaGodot::create_client_default() 
+{
     create_client("defaultkey", "127.0.0.1", 7349);
 }
 
-void NakamaGodot::create_client(String server_key, String server_host, int port) {
+void NakamaGodot::create_client(String server_key, String server_host, int port) 
+{
     parameters.serverKey = server_key.utf8().get_data();
     parameters.host = server_host.utf8().get_data();
     parameters.port = port;
     client = createDefaultClient(parameters);
 }
 
-int NakamaGodot::authenticate_email(String email, String password, String username) {
-
+int NakamaGodot::authenticate_email(String email, String password, String username) 
+{
     if (!client) return 3; // ERR_UNCONFIGURED
 
     auto err_callback = [this](const NError& error)
@@ -280,17 +308,20 @@ int NakamaGodot::authenticate_email(String email, String password, String userna
         true, 
         {}, 
         std::bind(&NakamaGodot::authenticated, this, _1), 
-        err_callback);
+        err_callback
+    );
 
     return 0; // OK
 }
 
-void NakamaGodot::authenticated(NSessionPtr session) {
+void NakamaGodot::authenticated(NSessionPtr session) 
+{
     NakamaGodot::session = session;
     emit_signal("authenticated", sessionToDict(session));
 }
 
-int NakamaGodot::connect_realtime_client() {
+int NakamaGodot::connect_realtime_client() 
+{
     if (!session) return 2; // ERR_UNCONFIGURED
     if (session->isExpired()) return 4; // ERR_UNAUTHORIZED
     if (rtClient) return 32; //ERR_ALREADY_EXISTS
@@ -299,46 +330,60 @@ int NakamaGodot::connect_realtime_client() {
     bool createStatus = true;
     rtClient = client->createRtClient(port);
 
-    rtListener.setConnectCallback([this]() {
-                emit_signal("realtime_client_connected");
-            });
+    rtListener.setConnectCallback([this]() 
+    {
+        emit_signal("realtime_client_connected");
+    });
     rtClient->setListener(&rtListener);
     rtClient->connect(session, createStatus);
 
     return 0; // OK
 }
 
-bool NakamaGodot::is_realtime_client_connected() {
+bool NakamaGodot::is_realtime_client_connected() 
+{
     return (rtClient && rtClient->isConnected());
 }
 
-bool NakamaGodot::is_session_expired() {
+bool NakamaGodot::is_session_expired() 
+{
     return !(session && !session->isExpired());
 }
 
-void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool hidden) {
-    rtListener.setChannelMessageCallback([this](const NChannelMessage& message) {
-                emit_signal("chat_message_recieved", messageToDict(message));
-            });
+void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool hidden) 
+{
+    rtListener.setChannelPresenceCallback([this](const NChannelPresenceEvent& event)
+    {
+        emit_signal("channel_presence_event", presenceEventToDict(event));
+    });
 
-    auto sucessJoinCallback = [this](NChannelPtr channel) {
+    rtListener.setChannelMessageCallback([this](const NChannelMessage& message) 
+    {
+        emit_signal("chat_message_recieved", messageToDict(message));
+    });
+
+    auto sucessJoinCallback = [this](NChannelPtr channel) 
+    {
         emit_signal("chat_joined", channelToDict(channel));
     };
 
-    auto errorJoinCallback = [this](const NRtError& error) {
+    auto errorJoinCallback = [this](const NRtError& error) 
+    {
         emit_signal("chat_join_failed", rtErrToDict(error));
     };
 
     rtClient->joinChat(
-            roomName.utf8().get_data(),
-            (NChannelType)type,
-            persist,
-            hidden,
-            sucessJoinCallback,
-            errorJoinCallback);
+        roomName.utf8().get_data(),
+        (NChannelType)type,
+        persist,
+        hidden,
+        sucessJoinCallback,
+        errorJoinCallback
+    );
 }
 
-void NakamaGodot::write_chat_message(String channelId, String content) {
+void NakamaGodot::write_chat_message(String channelId, String content) 
+{
     auto err_callback = [this](const NRtError& error)
     {
         emit_rt_error_signal("write_chat_message_failed", error);
@@ -347,10 +392,12 @@ void NakamaGodot::write_chat_message(String channelId, String content) {
         channelId.utf8().get_data(), 
         content.utf8().get_data(), 
         nullptr, 
-        err_callback);
+        err_callback
+    );
 }
 
-void NakamaGodot::store_object(String collection, String key, Dictionary value) {
+void NakamaGodot::store_object(String collection, String key, Dictionary value) 
+{
     std::vector<NStorageObjectWrite> objects;
     NStorageObjectWrite write;
     write.collection = collection.utf8().get_data();
@@ -360,7 +407,8 @@ void NakamaGodot::store_object(String collection, String key, Dictionary value) 
     store_object_list(objects);
 }
 
-void NakamaGodot::store_objects(String collection, Dictionary kvps) {
+void NakamaGodot::store_objects(String collection, Dictionary kvps) 
+{
     std::vector<NStorageObjectWrite> objects;
     auto keys = kvps.keys();
     for (int i = 0; i < keys.size(); i++)
