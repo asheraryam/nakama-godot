@@ -284,10 +284,10 @@ void NakamaGodot::authenticated(NSessionPtr session) {
     emit_signal("authenticated", sessionToDict(session));
 }
 
-void NakamaGodot::connect_realtime_client() {
-    if (!session) return;
-    if (session->isExpired()) return;
-    if (rtClient) return;
+int NakamaGodot::connect_realtime_client() {
+    if (!session) return 2; // ERR_UNCONFIGURED
+    if (session->isExpired()) return 4; // ERR_UNAUTHORIZED
+    if (rtClient) return 32; //ERR_ALREADY_EXISTS
 
     int port = 7350;
     bool createStatus = true;
@@ -298,6 +298,8 @@ void NakamaGodot::connect_realtime_client() {
             });
     rtClient->setListener(&rtListener);
     rtClient->connect(session, createStatus);
+    
+    return 0; // OK
 }
 
 bool NakamaGodot::is_realtime_client_connected() {
