@@ -125,32 +125,32 @@ void NakamaGodot::_register_methods() {
     register_signal<NakamaGodot>("rpc_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("rpc_complete", "rpc_id", GODOT_VARIANT_TYPE_STRING, "response", GODOT_VARIANT_TYPE_STRING);
 
-    register_signal<NakamaGodot>("group_listing_complete", GODOT_VARIANT_TYPE_ARRAY, "groups", GODOT_VARIANT_TYPE_STRING, "cursor");
-    register_signal<NakamaGodot>("list_groups_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("user_groups_listed", GODOT_VARIANT_TYPE_ARRAY, "groups", GODOT_VARIANT_TYPE_STRING, "cursor");
-    register_signal<NakamaGodot>("list_user_groups_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("group_members_listed", GODOT_VARIANT_TYPE_DICTIONARY, "members", GODOT_VARIANT_TYPE_STRING, "cursor");
-    register_signal<NakamaGodot>("list_group_members_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("group_created", GODOT_VARIANT_TYPE_DICTIONARY, "group");
-    register_signal<NakamaGodot>("create_group_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("group_opened", GODOT_VARIANT_TYPE_STRING, "groupId");
-    register_signal<NakamaGodot>("open_group_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("group_closed", GODOT_VARIANT_TYPE_STRING, "groupId");
-    register_signal<NakamaGodot>("close_group_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("group_created", GODOT_VARIANT_TYPE_DICTIONARY, "group");
-    register_signal<NakamaGodot>("create_group_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("group_removed", GODOT_VARIANT_TYPE_DICTIONARY, "group");
-    register_signal<NakamaGodot>("remove_group_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("joined_group", GODOT_VARIANT_TYPE_STRING, "groupId");
-    register_signal<NakamaGodot>("join_group_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("left_group", GODOT_VARIANT_TYPE_STRING, "groupId");
-    register_signal<NakamaGodot>("leave_group_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("accepted_members", GODOT_VARIANT_TYPE_STRING, "groupId", GODOT_VARIANT_TYPE_ARRAY, "userIds");
-    register_signal<NakamaGodot>("accept_members_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("promoted_members", GODOT_VARIANT_TYPE_STRING, "groupId", GODOT_VARIANT_TYPE_ARRAY, "userIds");
-    register_signal<NakamaGodot>("promote_members_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
-    register_signal<NakamaGodot>("kicked_members", GODOT_VARIANT_TYPE_STRING, "groupId", GODOT_VARIANT_TYPE_ARRAY, "userIds");
-    register_signal<NakamaGodot>("kick_members_failed", GODOT_VARIANT_TYPE_INT, "code", GODOT_VARIANT_TYPE_STRING, "message");
+    register_signal<NakamaGodot>("group_listing_complete", "groups", GODOT_VARIANT_TYPE_ARRAY, "cursor", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("list_groups_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("user_groups_listed", "groups", GODOT_VARIANT_TYPE_ARRAY, "cursor", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("list_user_groups_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("group_members_listed", "members", GODOT_VARIANT_TYPE_DICTIONARY, "cursor", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("list_group_members_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("group_created", "group", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("create_group_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("group_opened", "groupId", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("open_group_failed", "code", GODOT_VARIANT_TYPE_INT, "message",GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("group_closed", "groupId", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("close_group_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("group_created", "group", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("create_group_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("group_removed", "group", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("remove_group_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("joined_group", "groupId", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("join_group_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("left_group", "groupId", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("leave_group_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("accepted_members", "groupId", GODOT_VARIANT_TYPE_STRING, "userIds", GODOT_VARIANT_TYPE_ARRAY);
+    register_signal<NakamaGodot>("accept_members_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("promoted_members", "groupId", GODOT_VARIANT_TYPE_STRING, "userIds", GODOT_VARIANT_TYPE_ARRAY);
+    register_signal<NakamaGodot>("promote_members_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("kicked_members", "groupId", GODOT_VARIANT_TYPE_STRING, "userIds", GODOT_VARIANT_TYPE_ARRAY);
+    register_signal<NakamaGodot>("kick_members_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 }
 
 void NakamaGodot::_init() {
