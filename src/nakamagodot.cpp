@@ -3,14 +3,6 @@
 using namespace std::placeholders;
 using namespace godot;
 
-Dictionary errToDict(const NError& error)
-{
-    Dictionary d;
-    d["code"] = (int)error.code;
-    d["message"] = String(error.message.c_str());
-    return d;
-}
-
 Dictionary rtErrToDict(const NRtError& error) {
     Dictionary d;
     d["code"] = (int)error.code;
@@ -118,11 +110,14 @@ void NakamaGodot::_register_methods() {
     register_signal<NakamaGodot>("chat_joined", "channel_id", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("chat_join_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
 
-    register_signal<NakamaGodot>("storage_read_complete", "objects", GODOT_VARIANT_TYPE_DICTIONARY, "error", GODOT_VARIANT_TYPE_DICTIONARY);
-    register_signal<NakamaGodot>("storage_write_complete", "error", GODOT_VARIANT_TYPE_DICTIONARY);
-    register_signal<NakamaGodot>("storage_remove_complete", "error", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("storage_read_complete", "objects", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("fetch_object_list_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("storage_write_complete");
+    register_signal<NakamaGodot>("store_object_list_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("storage_remove_complete");
+    register_signal<NakamaGodot>("remove_object_list_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
-    register_signal<NakamaGodot>("rpc_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("rpc_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("rpc_complete", "rpc_id", GODOT_VARIANT_TYPE_STRING, "response", GODOT_VARIANT_TYPE_STRING);
 
     register_signal<NakamaGodot>("group_listing_complete", "groups", GODOT_VARIANT_TYPE_ARRAY, "cursor", GODOT_VARIANT_TYPE_STRING);
@@ -308,11 +303,11 @@ void NakamaGodot::store_object_list(std::vector<NStorageObjectWrite> objects)
 {
     auto success_callback = [this](const auto& _) 
     {
-        emit_signal("storage_write_complete", Dictionary()); 
+        emit_signal("storage_write_complete"); 
     };
     auto err_callback = [this](const NError& error)
     {
-        emit_signal("storage_write_complete", errToDict(error));
+        emit_error_signal("store_object_list_failed", error);
     };
     client->writeStorageObjects(
         session, objects, 
@@ -350,7 +345,7 @@ void NakamaGodot::fetch_object_list(std::vector<NReadStorageObjectId> ids)
 {
     auto err_callback = [this](const NError& error)
     {
-        emit_signal("storage_read_complete", Dictionary(), errToDict(error));
+        emit_error_signal("fetch_object_list_failed", error);
     };
     auto success_callback = [this](const NStorageObjects& objects) 
     {
@@ -359,7 +354,7 @@ void NakamaGodot::fetch_object_list(std::vector<NReadStorageObjectId> ids)
         {
             d[String(object.key.c_str())] = String(object.value.c_str());
         }
-        emit_signal("storage_read_complete", d, Dictionary());
+        emit_signal("storage_read_complete", d);
     };
     client->readStorageObjects(
         session, ids, 
@@ -396,11 +391,11 @@ void NakamaGodot::remove_object_list(std::vector<NDeleteStorageObjectId> ids)
 {
     auto err_callback = [this](const NError& error)
     { 
-        emit_signal("storage_remove_complete", errToDict(error));
+        emit_error_signal("remove_object_list_failed", error);
     };
     auto success_callback = [this]()
     { 
-        emit_signal("storage_remove_complete", Dictionary()); 
+        emit_signal("storage_remove_complete"); 
     };
     client->deleteStorageObjects(
         session, 
@@ -412,11 +407,11 @@ void NakamaGodot::remove_object_list(std::vector<NDeleteStorageObjectId> ids)
 
 void NakamaGodot::send_rpc(String rpcId, Dictionary payload)
 {
-    auto errCallback = [this](const NError& error)
+    auto err_callback = [this](const NError& error)
     {
-        emit_signal("rpc_failed", errToDict(error));
+        emit_error_signal("rpc_failed", error);
     };
-    auto successCallback = [this](const NRpc& rpc)
+    auto success_callback = [this](const NRpc& rpc)
     {
         emit_signal("rpc_complete", String(rpc.id.c_str()), String(rpc.payload.c_str()));
     };
@@ -424,8 +419,8 @@ void NakamaGodot::send_rpc(String rpcId, Dictionary payload)
         session, 
         rpcId.utf8().get_data(), 
         payload.to_json().utf8().get_data(), 
-        successCallback, 
-        errCallback
+        success_callback, 
+        err_callback
     );
 }
 
