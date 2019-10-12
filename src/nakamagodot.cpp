@@ -316,9 +316,6 @@ bool NakamaGodot::is_session_expired() {
 
 void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool hidden) {
     rtListener.setChannelMessageCallback([this](const NChannelMessage& message) {
-                Godot::print("Recieved message on channel {0}", message.channelId.c_str());
-                Godot::print("Message content: {0}", message.content.c_str());
-
                 emit_signal("chat_message_recieved", messageToDict(message));
             });
 
