@@ -18,7 +18,7 @@ Currently only builds on Win64. Building for linux, OSX, Android, etc.. should s
 - [x] Real time chat
 - [x] Storage APIs (R/W/D)
 - [x] RPCs
-- [ ] Groups/Clans
+- [x] Groups/Clans
 - [ ] Friends
 - [ ] In-app notifications
 - [ ] Status
