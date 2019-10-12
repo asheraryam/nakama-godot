@@ -267,10 +267,7 @@ void NakamaGodot::authenticate_email(String email, String password, String usern
 
     auto err_callback = [this](const NError& error)
     {
-        Dictionary d;
-        d["code"] = (int)error.code;
-        d["message"] = String(error.message.c_str());
-        emit_signal("autentication_failed", d);
+        emit_error_signal("authentication_failed", error);
     };
 
     client->authenticateEmail(
