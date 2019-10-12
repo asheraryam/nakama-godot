@@ -28,6 +28,7 @@ namespace godot {
             void remove_object_list(std::vector<NDeleteStorageObjectId>);
             void fetch_object_list(std::vector<NReadStorageObjectId>);
             void emit_error_signal(String signal, const NError& error);
+            void emit_rt_error_signal(String signal, const NRtError& error);
 
         public:
             static void _register_methods();

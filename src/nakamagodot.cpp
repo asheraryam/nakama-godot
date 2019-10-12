@@ -172,10 +172,9 @@ void NakamaGodot::_register_methods() {
 
     // Signals
     register_signal<NakamaGodot>("authenticated", "session", GODOT_VARIANT_TYPE_DICTIONARY);
-    register_signal<NakamaGodot>("authentication_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("authentication_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
-    register_signal<NakamaGodot>("nakama_error", "error", GODOT_VARIANT_TYPE_DICTIONARY);
-
+    register_signal<NakamaGodot>("write_chat_message_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("chat_message_recieved", "message", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_joined", "channel", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_join_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
@@ -337,7 +336,7 @@ void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool h
 void NakamaGodot::write_chat_message(String channelId, String content) {
     auto err_callback = [this](const NRtError& error)
     {
-        emit_signal("nakama_error", Dictionary(), rtErrToDict(error));
+        emit_rt_error_signal("write_chat_message_failed", error);
     };
     rtClient->writeChatMessage(
         channelId.utf8().get_data(), 
@@ -936,6 +935,11 @@ void NakamaGodot::block_friends(Array userIds, Array usernames)
 }
 
 void NakamaGodot::emit_error_signal(String signal, const NError& error)
+{
+    emit_signal(signal, (int)error.code, String(error.message.c_str()));
+}
+
+void NakamaGodot::emit_rt_error_signal(String signal, const NRtError& error)
 {
     emit_signal(signal, (int)error.code, String(error.message.c_str()));
 }
