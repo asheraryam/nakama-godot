@@ -264,9 +264,9 @@ void NakamaGodot::create_client(String server_key, String server_host, int port)
     client = createDefaultClient(parameters);
 }
 
-void NakamaGodot::authenticate_email(String email, String password, String username) {
+int NakamaGodot::authenticate_email(String email, String password, String username) {
 
-    if (!client) return;
+    if (!client) return 3; // ERR_UNCONFIGURED
 
     auto err_callback = [this](const NError& error)
     {
@@ -281,6 +281,8 @@ void NakamaGodot::authenticate_email(String email, String password, String usern
         {}, 
         std::bind(&NakamaGodot::authenticated, this, _1), 
         err_callback);
+
+    return 0; // OK
 }
 
 void NakamaGodot::authenticated(NSessionPtr session) {

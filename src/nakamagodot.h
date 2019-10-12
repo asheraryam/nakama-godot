@@ -42,7 +42,7 @@ namespace godot {
             void create_client_default();
             void create_client(String server_key, String server_host, int port);
             void login_or_register();
-            void authenticate_email(String email, String password, String username);
+            int authenticate_email(String email, String password, String username);
             int connect_realtime_client();
             bool is_realtime_client_connected();
             bool is_session_expired();
