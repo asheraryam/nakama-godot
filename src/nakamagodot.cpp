@@ -57,6 +57,13 @@ Dictionary userToDict(NUser user)
     return d;
 }
 
+Dictionary friendToDict(NFriend fr)
+{
+    auto d = userToDict(fr.user);
+    d["state"] = (int)fr.state;
+    return d;
+}
+
 Dictionary groupMemberToDict(NGroupUser groupUser)
 {
     auto d = userToDict(groupUser.user);
@@ -98,6 +105,11 @@ void NakamaGodot::_register_methods() {
     register_method("accept_members", &NakamaGodot::accept_members);
     register_method("promote_members", &NakamaGodot::promote_members);
     register_method("kick_members", &NakamaGodot::kick_members);
+
+    register_method("add_friends", &NakamaGodot::add_friends);
+    register_method("list_friends", &NakamaGodot::list_friends);
+    register_method("remove_friends", &NakamaGodot::remove_friends);
+    register_method("block_friends", &NakamaGodot::block_friends);
 
     // Signals
     register_signal<NakamaGodot>("authenticated");
@@ -146,6 +158,15 @@ void NakamaGodot::_register_methods() {
     register_signal<NakamaGodot>("promote_members_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("kicked_members", "groupId", GODOT_VARIANT_TYPE_STRING, "userIds", GODOT_VARIANT_TYPE_ARRAY);
     register_signal<NakamaGodot>("kick_members_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+
+    register_signal<NakamaGodot>("friends_added");
+    register_signal<NakamaGodot>("add_friends_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("friends_listed", "friends", GODOT_VARIANT_TYPE_ARRAY, "cursor", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("list_friends_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("friends_removed");
+    register_signal<NakamaGodot>("remove_friends_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("friends_blocked");
+    register_signal<NakamaGodot>("block_friends_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 }
 
 void NakamaGodot::_init() {
@@ -738,6 +759,128 @@ void NakamaGodot::kick_members(String groupId, Array userIds)
         success_callback,
         err_callback
     );
+}
+
+void NakamaGodot::add_friends(Array userIds, Array usernames)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("add_friends_failed", error);
+    };
+    auto success_callback = [this]()
+    {
+        emit_signal("friends_added");
+    };
+    std::vector<std::string> idBuff;
+    std::vector<std::string> usernameBuff;
+    for (int i = 0; i < userIds.size(); i++)
+    {
+        auto userId = userIds[i].operator String();
+        idBuff.push_back(userId.utf8().get_data());
+    }
+    for (int i = 0; i < usernames.size(); i++)
+    {
+        auto username = usernames[i].operator String();
+        usernameBuff.push_back(username.utf8().get_data());
+    }
+    client->addFriends(
+        session,
+        idBuff,
+        usernameBuff,
+        success_callback,
+        err_callback
+    );
+}
+
+void NakamaGodot::list_friends(int limit, int state, String cursor)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("list_friends_failed", error);
+    };
+    auto success_callback = [this](NFriendListPtr friends)
+    {
+        Array arr;
+        for (auto& fr : friends->friends)
+        {
+            arr.append(friendToDict(fr));
+        }
+        emit_signal("friends_listed", arr, friends->cursor.c_str());
+    };
+    opt::optional_lite::optional<int32_t> limitOpt = {};
+    opt::optional_lite::optional<NFriend::State> stateOpt;
+    if (limit > 0) limitOpt = limit;
+    if (state >= 0 && state <= 3) stateOpt = NFriend::State(state);
+    client->listFriends(
+        session,
+        limitOpt,
+        stateOpt,
+        cursor.utf8().get_data(),
+        success_callback,
+        err_callback
+    );
+}
+
+void NakamaGodot::remove_friends(Array userIds, Array usernames)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("remove_friends_failed", error);
+    };
+    auto success_callback = [this]()
+    {
+        emit_signal("friends_removed");
+    };
+    std::vector<std::string> idBuff;
+    std::vector<std::string> usernameBuff;
+    for (int i = 0; i < userIds.size(); i++)
+    {
+        auto userId = userIds[i].operator String();
+        idBuff.push_back(userId.utf8().get_data());
+    }
+    for (int i = 0; i < usernames.size(); i++)
+    {
+        auto username = usernames[i].operator String();
+        usernameBuff.push_back(username.utf8().get_data());
+    }
+    client->deleteFriends(
+        session,
+        idBuff,
+        usernameBuff,
+        success_callback,
+        err_callback
+    );   
+}
+
+void NakamaGodot::block_friends(Array userIds, Array usernames)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("block_friends_failed", error);
+    };
+    auto success_callback = [this]()
+    {
+        emit_signal("friends_blocked");
+    };
+    std::vector<std::string> idBuff;
+    std::vector<std::string> usernameBuff;
+    for (int i = 0; i < userIds.size(); i++)
+    {
+        auto userId = userIds[i].operator String();
+        idBuff.push_back(userId.utf8().get_data());
+    }
+    for (int i = 0; i < usernames.size(); i++)
+    {
+        auto username = usernames[i].operator String();
+        usernameBuff.push_back(username.utf8().get_data());
+    }
+    client->blockFriends(
+        session,
+        idBuff,
+        usernameBuff,
+        success_callback,
+        err_callback
+    );   
 }
 
 void NakamaGodot::emit_error_signal(String signal, const NError& error)

@@ -75,7 +75,12 @@ namespace godot {
             void accept_members(String groupId, Array userIds);
             void promote_members(String groupId, Array userIds);
             void kick_members(String groupId, Array userIds);
-            
+
+            // Friends
+            void add_friends(Array userIds = Array(), Array usernames = Array());
+            void list_friends(int limit = 0, int state = -1, String cursor = "");
+            void remove_friends(Array userIds = Array(), Array usernames = Array());
+            void block_friends(Array userIds = Array(), Array usernames = Array());
     };
 }
 

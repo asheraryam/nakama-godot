@@ -19,7 +19,7 @@ Currently only builds on Win64. Building for linux, OSX, Android, etc.. should s
 - [x] Storage APIs (R/W/D)
 - [x] RPCs
 - [x] Groups/Clans
-- [ ] Friends
+- [x] Friends
 - [ ] In-app notifications
 - [ ] Status
 - [ ] User accounts
