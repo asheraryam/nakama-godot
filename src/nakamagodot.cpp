@@ -113,6 +113,23 @@ Dictionary messageToDict(NChannelMessage msg)
     return d;
 }
 
+Dictionary sessionToDict(NSessionPtr session)
+{
+    Dictionary d;
+    d["authToken"] = String(session->getAuthToken().c_str());
+    d["userId"] = String(session->getUserId().c_str());
+    d["username"] = String(session->getUsername().c_str());
+    d["isCreated"] = session->isCreated();
+    Dictionary vd;
+    auto vars = session->getVariables();
+    for (auto it = vars.begin(); it != vars.end(); it++)
+    {
+        vd[String(it->first.c_str())] = String(it->second.c_str());
+    }
+    d["variables"] = vd;
+    return d;
+}
+
 void NakamaGodot::_register_methods() {
     // Methods
     register_method("_process", &NakamaGodot::_process);
@@ -154,7 +171,7 @@ void NakamaGodot::_register_methods() {
     register_method("block_friends", &NakamaGodot::block_friends);
 
     // Signals
-    register_signal<NakamaGodot>("authenticated");
+    register_signal<NakamaGodot>("authenticated", "session", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("authentication_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
 
     register_signal<NakamaGodot>("nakama_error", "error", GODOT_VARIANT_TYPE_DICTIONARY);
@@ -230,7 +247,7 @@ NakamaGodot::NakamaGodot() {
 }
 
 NakamaGodot::~NakamaGodot() {
-    Godot::print("Destructing");
+    
 }
 
 void NakamaGodot::create_client_default() {
@@ -268,9 +285,7 @@ void NakamaGodot::authenticate_email(String email, String password, String usern
 
 void NakamaGodot::authenticated(NSessionPtr session) {
     NakamaGodot::session = session;
-    Godot::print(godot::String("Session token: ") + session->getAuthToken().c_str());
-    Godot::print(godot::String("Authenticated succesfully. User ID: ") + session->getUserId().c_str());
-    emit_signal("authenticated");
+    emit_signal("authenticated", sessionToDict(session));
 }
 
 void NakamaGodot::connect_realtime_client() {
