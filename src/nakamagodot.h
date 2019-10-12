@@ -20,7 +20,7 @@ namespace godot {
             NClientPtr client;
             NSessionPtr session;
             NRtClientPtr rtClient;
-            NRtDefaultClientListener _NRtListener;
+            NRtDefaultClientListener rtListener;
 
         private:
             void authenticated(NSessionPtr);

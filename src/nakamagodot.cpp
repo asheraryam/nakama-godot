@@ -71,6 +71,48 @@ Dictionary groupMemberToDict(NGroupUser groupUser)
     return d;
 }
 
+Dictionary userPresenceToDict(NUserPresence pres)
+{
+    Dictionary d;
+    d["userId"] = String(pres.userId.c_str());
+    d["username"] = String(pres.username.c_str());
+    d["sessionId"] = String(pres.sessionId.c_str());
+    d["status"] = String(pres.status.c_str());
+    d["persistence"] = pres.persistence;
+    return d;
+}
+
+Dictionary channelToDict(NChannelPtr channel)
+{
+    Dictionary d;
+    d["id"] = String(channel->id.c_str());
+    d["groupId"] = String(channel->groupId.c_str());
+    d["roomName"] = String(channel->roomName.c_str());
+    d["userIdOne"] = String(channel->userIdOne.c_str());
+    d["userIdTwo"] = String(channel->userIdTwo.c_str());
+    d["self"] = userPresenceToDict(channel->self);
+    Array presences;
+    for (auto& pres : channel->presences)
+    {
+        presences.append(userPresenceToDict(pres));
+    }
+    d["presences"] = presences;
+    return d;
+}
+
+Dictionary messageToDict(NChannelMessage msg)
+{
+    // TODO: Add more fields. This is good enough for now though.
+    Dictionary d;
+    d["channelId"] = String(msg.channelId.c_str());
+    d["messageId"] = String(msg.messageId.c_str());
+    d["code"] = msg.code;
+    d["senderId"] = String(msg.senderId.c_str());
+    d["username"] = String(msg.username.c_str());
+    d["content"] = String(msg.content.c_str());
+    return d;
+}
+
 void NakamaGodot::_register_methods() {
     // Methods
     register_method("_process", &NakamaGodot::_process);
@@ -117,9 +159,8 @@ void NakamaGodot::_register_methods() {
 
     register_signal<NakamaGodot>("nakama_error", "error", GODOT_VARIANT_TYPE_DICTIONARY);
 
-    register_signal<NakamaGodot>("chat_message_recieved", "channel_id", GODOT_VARIANT_TYPE_STRING, "message_id", GODOT_VARIANT_TYPE_STRING, "message_code", GODOT_VARIANT_TYPE_INT, "sender_id", GODOT_VARIANT_TYPE_STRING, "username", GODOT_VARIANT_TYPE_STRING, "content", GODOT_VARIANT_TYPE_STRING);
-
-    register_signal<NakamaGodot>("chat_joined", "channel_id", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("chat_message_recieved", "message", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("chat_joined", "channel", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_join_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
 
     register_signal<NakamaGodot>("storage_read_complete", "objects", GODOT_VARIANT_TYPE_DICTIONARY);
@@ -241,10 +282,10 @@ void NakamaGodot::connect_realtime_client() {
     bool createStatus = true;
     rtClient = client->createRtClient(port);
 
-    _NRtListener.setConnectCallback([]() {
+    rtListener.setConnectCallback([]() {
                 Godot::print("Realtime client connected");
             });
-    rtClient->setListener(&_NRtListener);
+    rtClient->setListener(&rtListener);
     rtClient->connect(session, createStatus);
 }
 
@@ -257,16 +298,15 @@ bool NakamaGodot::is_session_expired() {
 }
 
 void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool hidden) {
-    _NRtListener.setChannelMessageCallback([this](const NChannelMessage& message) {
+    rtListener.setChannelMessageCallback([this](const NChannelMessage& message) {
                 Godot::print("Recieved message on channel {0}", message.channelId.c_str());
                 Godot::print("Message content: {0}", message.content.c_str());
 
-                emit_signal("chat_message_recieved", message.channelId.c_str(), message.messageId.c_str(), message.code, message.senderId.c_str(), message.username.c_str(), message.content.c_str());
+                emit_signal("chat_message_recieved", messageToDict(message));
             });
 
     auto sucessJoinCallback = [this](NChannelPtr channel) {
-        Godot::print("Joined chat: {0}", channel->id.c_str());
-        emit_signal("chat_joinec", channel->id.c_str());
+        emit_signal("chat_joined", channelToDict(channel));
     };
 
     auto errorJoinCallback = [this](const NRtError& error) {
