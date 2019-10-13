@@ -146,6 +146,21 @@ Dictionary presenceEventToDict(const NChannelPresenceEvent& event)
     return d;
 }
 
+NStringMap varMap(Dictionary vars)
+{
+    NStringMap v;
+    auto keys = vars.keys();
+    for (int i = 0; i < keys.size(); i++)
+    {
+        if (keys[i].get_type() != Variant::Type::STRING) break;
+        auto key = keys[i].operator String();
+        if (vars[key].get_type() != Variant::Type::STRING) break;
+            
+        v[key.utf8().get_data()] = vars[key].operator String().utf8().get_data();
+    }
+    return v;
+}
+
 void NakamaGodot::_register_methods() 
 {
     // Methods
@@ -153,6 +168,12 @@ void NakamaGodot::_register_methods()
     register_method("create_client_default", &NakamaGodot::create_client_default);
     register_method("create_client", &NakamaGodot::create_client);
     register_method("authenticate_email", &NakamaGodot::authenticate_email);
+    register_method("authenticate_device", &NakamaGodot::authenticate_device);
+    register_method("authenticate_facebook", &NakamaGodot::authenticate_facebook);
+    register_method("authenticate_google", &NakamaGodot::authenticate_google);
+    register_method("authenticate_game_center", &NakamaGodot::authenticate_game_center);
+    register_method("authenticate_steam", &NakamaGodot::authenticate_steam);
+    register_method("authenticate_custom", &NakamaGodot::authenticate_custom);
     register_method("connect_realtime_client", &NakamaGodot::connect_realtime_client);
 
     register_method("join_chat", &NakamaGodot::join_chat);
@@ -289,7 +310,103 @@ void NakamaGodot::create_client(String server_key, String server_host, int port)
     client = createDefaultClient(parameters);
 }
 
-int NakamaGodot::authenticate_email(String email, String password, String username) 
+int NakamaGodot::authenticate_email(String email, String password, String username, bool create, Dictionary vars) 
+{
+    if (!client) return 3; // ERR_UNCONFIGURED
+
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("authentication_failed", error);
+    };
+    client->authenticateEmail(
+        std::string(email.utf8().get_data()), 
+        std::string(password.utf8().get_data()), 
+        username.utf8().get_data(), 
+        create, 
+        varMap(vars), 
+        std::bind(&NakamaGodot::authenticated, this, _1), 
+        err_callback
+    );
+
+    return 0; // OK
+}
+
+int NakamaGodot::authenticate_device(String deviceId, String username, bool create, Dictionary vars)
+{
+    if (!client) return 3; // ERR_UNCONFIGURED
+
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("authentication_failed", error);
+    };
+    opt::optional_lite::optional<std::string> userOpt = opt::nullopt;
+    if (username != "") userOpt = username.utf8().get_data();
+    client->authenticateDevice(
+        deviceId.utf8().get_data(),
+        userOpt,
+        create,
+        varMap(vars),
+        std::bind(&NakamaGodot::authenticated, this, _1),
+        err_callback
+    );
+
+    return 0; // OK
+}
+
+int NakamaGodot::authenticate_facebook(String oauthToken, String username, bool create, bool importFriends, Dictionary vars)
+{
+    if (!client) return 3; // ERR_UNCONFIGURED
+
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("authentication_failed", error);
+    };
+    
+    client->authenticateFacebook(
+        oauthToken.utf8().get_data(),
+        username.utf8().get_data(),
+        create,
+        importFriends,
+        varMap(vars),
+        std::bind(&NakamaGodot::authenticated, this, _1),
+        err_callback
+    );
+
+    return 0; // OK
+}
+
+int NakamaGodot::authenticate_google(String oauthToken, String username, bool create, Dictionary vars)
+{
+    if (!client) return 3; // ERR_UNCONFIGURED
+
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("authentication_failed", error);
+    };
+    
+    client->authenticateGoogle(
+        oauthToken.utf8().get_data(),
+        username.utf8().get_data(),
+        create,
+        varMap(vars),
+        std::bind(&NakamaGodot::authenticated, this, _1),
+        err_callback
+    );
+
+    return 0; // OK
+}
+
+int NakamaGodot::authenticate_game_center(
+    String playerId, 
+    String bundleId, 
+    int timestampSeconds, 
+    String salt, 
+    String signature, 
+    String publicKeyUrl, 
+    String username, 
+    bool create, 
+    Dictionary vars
+)
 {
     if (!client) return 3; // ERR_UNCONFIGURED
 
@@ -298,13 +415,59 @@ int NakamaGodot::authenticate_email(String email, String password, String userna
         emit_error_signal("authentication_failed", error);
     };
 
-    client->authenticateEmail(
-        std::string(email.utf8().get_data()), 
-        std::string(password.utf8().get_data()), 
-        username.utf8().get_data(), 
-        true, 
-        {}, 
-        std::bind(&NakamaGodot::authenticated, this, _1), 
+    client->authenticateGameCenter(
+        playerId.utf8().get_data(),
+        bundleId.utf8().get_data(),
+        NTimestamp(timestampSeconds),
+        salt.utf8().get_data(),
+        signature.utf8().get_data(),
+        publicKeyUrl.utf8().get_data(),
+        username.utf8().get_data(),
+        create,
+        varMap(vars),
+        std::bind(&NakamaGodot::authenticated, this, _1),
+        err_callback
+    );
+
+    return 0; // OK
+}
+
+int NakamaGodot::authenticate_steam(String token, String username, bool create, Dictionary vars)
+{
+    if (!client) return 3; // ERR_UNCONFIGURED
+
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("authentication_failed", error);
+    };
+    client->authenticateSteam(
+        token.utf8().get_data(),
+        username.utf8().get_data(),
+        create,
+        varMap(vars),
+        std::bind(&NakamaGodot::authenticated, this, _1),
+        err_callback
+    );
+
+    return 0; // OK
+}
+
+int NakamaGodot::authenticate_custom(String id, String username, bool create, Dictionary vars)
+{
+    if (!client) return 3; // ERR_UNCONFIGURED
+
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("authentication_failed", error);
+    };
+    opt::optional_lite::optional<std::string> userOpt = opt::nullopt;
+    if (username != "") userOpt = username.utf8().get_data();
+    client->authenticateDevice(
+        id.utf8().get_data(),
+        userOpt,
+        create,
+        varMap(vars),
+        std::bind(&NakamaGodot::authenticated, this, _1),
         err_callback
     );
 

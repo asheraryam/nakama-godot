@@ -42,7 +42,23 @@ namespace godot {
             void create_client_default();
             void create_client(String server_key, String server_host, int port);
             void login_or_register();
-            int authenticate_email(String email, String password, String username);
+            int authenticate_email(String email, String password, String username = "", bool create = false, Dictionary vars = Dictionary());
+            int authenticate_device(String deviceId, String username = "", bool create = false, Dictionary vars = Dictionary());
+            int authenticate_facebook(String oauthToken, String username, bool create = false, bool importFriends = false, Dictionary vars = Dictionary());
+            int authenticate_google(String oauthToken, String username, bool create = false, Dictionary vars = Dictionary());
+            int authenticate_game_center(
+                String playerId, 
+                String bundleId, 
+                int timestampSeconds, 
+                String salt, 
+                String signature, 
+                String publicKeyUrl, 
+                String username, 
+                bool create = false, 
+                Dictionary vars = Dictionary()
+            );
+            int authenticate_steam(String token, String username = "", bool create = false, Dictionary vars = Dictionary());
+            int authenticate_custom(String id, String username = "", bool create = false, Dictionary vars = Dictionary());
             int connect_realtime_client();
             bool is_realtime_client_connected();
             bool is_session_expired();
