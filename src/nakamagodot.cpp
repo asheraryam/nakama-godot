@@ -206,7 +206,7 @@ void NakamaGodot::_register_methods()
 {
     // Properties
     register_property<NakamaGodot, String>("server_key", &NakamaGodot::serverKey, "");
-    register_property<NakamaGodot, String>("host", &NakamaGodot::host, "");
+    register_property<NakamaGodot, String>("host", &NakamaGodot::host, "127.0.0.1");
     register_property<NakamaGodot, int>("port", &NakamaGodot::port, 7350);
     register_property<NakamaGodot, bool>("ssl", &NakamaGodot::ssl, false);
     register_property<NakamaGodot, bool>("realtime", &NakamaGodot::realtime, true);
@@ -221,7 +221,6 @@ void NakamaGodot::_register_methods()
     register_method("authenticate_game_center", &NakamaGodot::authenticate_game_center);
     register_method("authenticate_steam", &NakamaGodot::authenticate_steam);
     register_method("authenticate_custom", &NakamaGodot::authenticate_custom);
-    register_method("connect_realtime_client", &NakamaGodot::connect_realtime_client);
 
     register_method("join_chat", &NakamaGodot::join_chat);
     register_method("leave_chat", &NakamaGodot::leave_chat);
@@ -374,6 +373,7 @@ void NakamaGodot::create_client()
     parameters.serverKey = serverKey.utf8().get_data();
     parameters.host = host.utf8().get_data();
     parameters.port = port;
+    parameters.ssl = ssl;
     client = createDefaultClient(parameters);
 }
 
