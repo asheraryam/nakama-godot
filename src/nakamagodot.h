@@ -22,6 +22,12 @@ namespace godot {
             NRtClientPtr rtClient;
             NRtDefaultClientListener rtListener;
 
+            String serverKey;
+            String host;
+            int port;
+            bool ssl;
+            bool realtime;
+
         private:
             void authenticated(NSessionPtr);
             void store_object_list(std::vector<NStorageObjectWrite>);
@@ -29,6 +35,10 @@ namespace godot {
             void fetch_object_list(std::vector<NReadStorageObjectId>);
             void emit_error_signal(String signal, const NError& error);
             void emit_rt_error_signal(String signal, const NRtError& error);
+        
+        protected:
+            void create_client();
+            int connect_realtime_client();
 
         public:
             static void _register_methods();
@@ -36,12 +46,9 @@ namespace godot {
             NakamaGodot();
             ~NakamaGodot();
 
+            void _ready();
             void _init(); // our initializer called by Godot
             void _process(float delta);
-
-            // Clients
-            void create_client_default();
-            void create_client(String server_key, String server_host, int port);
 
             // Auth
             int authenticate_email(String email, String password, String username = "", bool create = false, Dictionary vars = Dictionary());
@@ -61,7 +68,6 @@ namespace godot {
             );
             int authenticate_steam(String token, String username = "", bool create = false, Dictionary vars = Dictionary());
             int authenticate_custom(String id, String username = "", bool create = false, Dictionary vars = Dictionary());
-            int connect_realtime_client();
             bool is_realtime_client_connected();
             bool is_session_expired();
 

@@ -204,10 +204,16 @@ Dictionary notificationToDict(const NNotification notification)
 
 void NakamaGodot::_register_methods() 
 {
+    // Properties
+    register_property<NakamaGodot, String>("server_key", &NakamaGodot::serverKey, "");
+    register_property<NakamaGodot, String>("host", &NakamaGodot::host, "");
+    register_property<NakamaGodot, int>("port", &NakamaGodot::port, 7350);
+    register_property<NakamaGodot, bool>("ssl", &NakamaGodot::ssl, false);
+    register_property<NakamaGodot, bool>("realtime", &NakamaGodot::realtime, true);
+
     // Methods
     register_method("_process", &NakamaGodot::_process);
-    register_method("create_client_default", &NakamaGodot::create_client_default);
-    register_method("create_client", &NakamaGodot::create_client);
+    register_method("_ready", &NakamaGodot::_ready);
     register_method("authenticate_email", &NakamaGodot::authenticate_email);
     register_method("authenticate_device", &NakamaGodot::authenticate_device);
     register_method("authenticate_facebook", &NakamaGodot::authenticate_facebook);
@@ -340,6 +346,11 @@ void NakamaGodot::_init()
     NLogger::init(std::make_shared<NGodotLogSink>(), NLogLevel::Debug);
 }
 
+void NakamaGodot::_ready()
+{
+    create_client();
+}
+
 void NakamaGodot::_process(float delta) 
 {
     if (!client) return;
@@ -358,15 +369,10 @@ NakamaGodot::NakamaGodot() { }
 
 NakamaGodot::~NakamaGodot() { }
 
-void NakamaGodot::create_client_default() 
+void NakamaGodot::create_client() 
 {
-    create_client("defaultkey", "127.0.0.1", 7349);
-}
-
-void NakamaGodot::create_client(String server_key, String server_host, int port) 
-{
-    parameters.serverKey = server_key.utf8().get_data();
-    parameters.host = server_host.utf8().get_data();
+    parameters.serverKey = serverKey.utf8().get_data();
+    parameters.host = host.utf8().get_data();
     parameters.port = port;
     client = createDefaultClient(parameters);
 }
@@ -546,6 +552,8 @@ void NakamaGodot::authenticated(NSessionPtr session)
         }
         emit_signal("notifications_received", notifications, String(list.cacheableCursor.c_str()));
     });
+    if (realtime)
+        connect_realtime_client();
     emit_signal("authenticated", sessionToDict(session));
 }
 
