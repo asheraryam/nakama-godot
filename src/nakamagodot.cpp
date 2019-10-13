@@ -205,7 +205,7 @@ Dictionary notificationToDict(const NNotification notification)
 void NakamaGodot::_register_methods() 
 {
     // Properties
-    register_property<NakamaGodot, String>("server_key", &NakamaGodot::serverKey, "");
+    register_property<NakamaGodot, String>("server_key", &NakamaGodot::serverKey, "defaultkey");
     register_property<NakamaGodot, String>("host", &NakamaGodot::host, "127.0.0.1");
     register_property<NakamaGodot, int>("port", &NakamaGodot::port, 7350);
     register_property<NakamaGodot, bool>("ssl", &NakamaGodot::ssl, false);
