@@ -328,6 +328,16 @@ int NakamaGodot::connect_realtime_client()
     {
         emit_signal("realtime_client_connected");
     });
+    rtListener.setChannelPresenceCallback([this](const NChannelPresenceEvent& event)
+    {
+        emit_signal("channel_presence_event", presenceEventToDict(event));
+    });
+
+    rtListener.setChannelMessageCallback([this](const NChannelMessage& message) 
+    {
+        emit_signal("chat_message_recieved", messageToDict(message));
+    });
+
     rtClient->setListener(&rtListener);
     rtClient->connect(session, createStatus);
 
@@ -346,16 +356,6 @@ bool NakamaGodot::is_session_expired()
 
 void NakamaGodot::join_chat(String roomName, int type, bool persist, bool hidden) 
 {
-    rtListener.setChannelPresenceCallback([this](const NChannelPresenceEvent& event)
-    {
-        emit_signal("channel_presence_event", presenceEventToDict(event));
-    });
-
-    rtListener.setChannelMessageCallback([this](const NChannelMessage& message) 
-    {
-        emit_signal("chat_message_recieved", messageToDict(message));
-    });
-
     auto sucessJoinCallback = [this](NChannelPtr channel) 
     {
         emit_signal("chat_joined", channelToDict(channel));
