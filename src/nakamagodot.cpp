@@ -189,6 +189,19 @@ Dictionary accountToDict(const NAccount& account)
     return d;
 }
 
+Dictionary notificationToDict(const NNotification notification)
+{
+    Dictionary d;
+    d["id"] = String(notification.id.c_str());
+    d["code"] = int(notification.code);
+    d["content"] = String(notification.content.c_str());
+    d["subject"] = String(notification.subject.c_str());
+    d["senderId"] = String(notification.senderId.c_str());
+    d["createTime"] = int(notification.createTime);
+    d["persistent"] = notification.persistent;
+    return d;
+}
+
 void NakamaGodot::_register_methods() 
 {
     // Methods
@@ -242,6 +255,9 @@ void NakamaGodot::_register_methods()
     register_method("fetch_account", &NakamaGodot::fetch_account);
     register_method("fetch_users", &NakamaGodot::fetch_users);
     register_method("update_account", &NakamaGodot::update_account);
+
+    register_method("list_notifications", &NakamaGodot::list_notifications);
+    register_method("delete_notifications", &NakamaGodot::delete_notifications);
 
     // Signals
     register_signal<NakamaGodot>("realtime_client_connected");
@@ -311,6 +327,12 @@ void NakamaGodot::_register_methods()
     register_signal<NakamaGodot>("fetch_users_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("acount_updated");
     register_signal<NakamaGodot>("update_account_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+
+    register_signal<NakamaGodot>("notifications_listed", "notifications", GODOT_VARIANT_TYPE_ARRAY, "cursor", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("list_notifications_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("notifications_deleted", "deletedIds", GODOT_VARIANT_TYPE_ARRAY);
+    register_signal<NakamaGodot>("delete_notifications_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("notifications_received", "notifications", GODOT_VARIANT_TYPE_ARRAY, "cursor", GODOT_VARIANT_TYPE_STRING);
 }
 
 void NakamaGodot::_init() 
@@ -516,6 +538,14 @@ int NakamaGodot::authenticate_custom(String id, String username, bool create, Di
 void NakamaGodot::authenticated(NSessionPtr session) 
 {
     NakamaGodot::session = session;
+    rtListener.setNotificationsCallback([this](const NNotificationList& list){
+        Array notifications;
+        for (auto& notification : list.notifications)
+        {
+            notifications.append(notificationToDict(notification));
+        }
+        emit_signal("notifications_received", notifications, String(list.cacheableCursor.c_str()));
+    });
     emit_signal("authenticated", sessionToDict(session));
 }
 
@@ -1310,6 +1340,56 @@ void NakamaGodot::update_account(String username, String displayName, String ava
         lang.utf8().get_data(),
         location.utf8().get_data(),
         timezone.utf8().get_data(),
+        success_callback,
+        err_callback
+    );
+}
+
+void NakamaGodot::list_notifications(String cursor, int limit)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("list_notifications_failed", error);
+    };
+    auto success_callback = [this](NNotificationListPtr list)
+    {
+        Array notifications;
+        for (auto& notification : list->notifications)
+        {
+            notifications.append(notificationToDict(notification));
+        }
+        emit_signal("notifications_listed", notifications, String(list->cacheableCursor.c_str()));
+    };
+    opt::optional_lite::optional<int32_t> limitOpt = opt::nullopt;
+    if (limit > 0) limitOpt = limit;
+    client->listNotifications(
+        session,
+        limitOpt,
+        cursor.utf8().get_data(),
+        success_callback,
+        err_callback
+    );
+}
+
+void NakamaGodot::delete_notifications(Array notificationIds)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("delete_notifications_failed", error);
+    };
+    auto success_callback = [this, notificationIds]()
+    {
+        emit_signal("notifications_deleted", notificationIds);
+    };
+    std::vector<std::string> ids;
+    for (int i = 0; i < notificationIds.size(); i++)
+    {
+        if (notificationIds[i].get_type() == Variant::Type::STRING)
+            ids.push_back(notificationIds[i].operator String().utf8().get_data());
+    }
+    client->deleteNotifications(
+        session,
+        ids,
         success_callback,
         err_callback
     );

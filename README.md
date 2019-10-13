@@ -21,9 +21,9 @@ Currently only builds on Win64. Building for linux, OSX, Android, etc.. should s
 - [x] Groups/Clans
 - [x] Friends
 - [x] Authentication types other than email
-- [ ] In-app notifications
+- [x] User accounts
+- [x] In-app notifications
 - [ ] Status
-- [ ] User accounts
 - [ ] Leaderboards
 - [ ] Tournaments
 - [ ] Matchmaking

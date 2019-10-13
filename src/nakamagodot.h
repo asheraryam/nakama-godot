@@ -107,6 +107,10 @@ namespace godot {
             void fetch_account();
             void fetch_users(Array ids = Array(), Array usernames = Array(), Array facebookIds = Array());
             void update_account(String username, String displayName, String avatarUrl, String lang, String location, String timezone);
+
+            // Notifications
+            void list_notifications(String cursor = "", int limit = 100);
+            void delete_notifications(Array notificationIds);
     };
 }
 
