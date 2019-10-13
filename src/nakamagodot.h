@@ -51,6 +51,7 @@ namespace godot {
             void join_chat(String roomName, int type = 0, bool persist=false, bool hidden=true);
             void leave_chat(String channelId);
             void write_chat_message(String channelId, String content);
+            void list_chat_messages(String channelId, int limit = -1, bool forward = true, String cursor = "");
 
             // Storage
             void store_object(String collection, String key, Dictionary value);

@@ -158,6 +158,7 @@ void NakamaGodot::_register_methods()
     register_method("join_chat", &NakamaGodot::join_chat);
     register_method("leave_chat", &NakamaGodot::leave_chat);
     register_method("write_chat_message", &NakamaGodot::write_chat_message);
+    register_method("list_chat_messages", &NakamaGodot::list_chat_messages);
 
     register_method("is_realtime_client_connected", &NakamaGodot::is_realtime_client_connected);
     register_method("is_session_expired", &NakamaGodot::is_session_expired);
@@ -202,6 +203,8 @@ void NakamaGodot::_register_methods()
     register_signal<NakamaGodot>("join_chat_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("left_chat", "channelId", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("leave_chat_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("chat_messages_listed", "messages", GODOT_VARIANT_TYPE_ARRAY, "next", GODOT_VARIANT_TYPE_STRING, "prev", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("list_chat_messages_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
     register_signal<NakamaGodot>("storage_read_complete", "objects", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("fetch_object_list_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
@@ -403,6 +406,35 @@ void NakamaGodot::write_chat_message(String channelId, String content)
         channelId.utf8().get_data(), 
         content.utf8().get_data(), 
         nullptr, 
+        err_callback
+    );
+}
+
+void NakamaGodot::list_chat_messages(String channelId, int limit, bool forward, String cursor)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("list_chat_messages_failed", error);
+    };
+
+    auto success_callback = [this](NChannelMessageListPtr list)
+    {
+        Array messages;
+        for (auto& listItem : list->messages)
+        {
+            messages.append(messageToDict(listItem));
+        }        
+        emit_signal("chat_messages_listed", messages, String(list->nextCursor.c_str()), String(list->prevCursor.c_str()));
+    };
+    opt::optional_lite::optional<int> limitOpt = opt::nullopt;
+    if (limit >= 0) limitOpt = limit;
+    client->listChannelMessages(
+        session,
+        channelId.utf8().get_data(),
+        limitOpt,
+        cursor.utf8().get_data(),
+        forward,
+        success_callback,
         err_callback
     );
 }
