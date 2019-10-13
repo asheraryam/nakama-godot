@@ -3,14 +3,6 @@
 using namespace std::placeholders;
 using namespace godot;
 
-Dictionary rtErrToDict(const NRtError& error) 
-{
-    Dictionary d;
-    d["code"] = (int)error.code;
-    d["message"] = String(error.message.c_str());
-    return d;
-}
-
 Dictionary groupToDict(NGroup group)
 {
     Dictionary d;
@@ -163,8 +155,8 @@ void NakamaGodot::_register_methods()
     register_method("authenticate_email", &NakamaGodot::authenticate_email);
     register_method("connect_realtime_client", &NakamaGodot::connect_realtime_client);
 
-    register_method("join_chat_room", &NakamaGodot::join_chat_room);
-    register_method("leave_chat_room", &NakamaGodot::leave_chat);
+    register_method("join_chat", &NakamaGodot::join_chat);
+    register_method("leave_chat", &NakamaGodot::leave_chat);
     register_method("write_chat_message", &NakamaGodot::write_chat_message);
 
     register_method("is_realtime_client_connected", &NakamaGodot::is_realtime_client_connected);
@@ -207,7 +199,7 @@ void NakamaGodot::_register_methods()
     register_signal<NakamaGodot>("write_chat_message_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("chat_message_recieved", "message", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_joined", "channel", GODOT_VARIANT_TYPE_DICTIONARY);
-    register_signal<NakamaGodot>("chat_join_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("join_chat_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("left_chat", "channelId", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("leave_chat_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
@@ -352,7 +344,7 @@ bool NakamaGodot::is_session_expired()
     return !(session && !session->isExpired());
 }
 
-void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool hidden) 
+void NakamaGodot::join_chat(String roomName, int type, bool persist, bool hidden) 
 {
     rtListener.setChannelPresenceCallback([this](const NChannelPresenceEvent& event)
     {
@@ -371,7 +363,7 @@ void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool h
 
     auto errorJoinCallback = [this](const NRtError& error) 
     {
-        emit_signal("chat_join_failed", rtErrToDict(error));
+        emit_rt_error_signal("join_chat_failed", error);
     };
 
     rtClient->joinChat(
