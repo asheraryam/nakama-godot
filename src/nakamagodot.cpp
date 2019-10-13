@@ -3,6 +3,31 @@
 using namespace std::placeholders;
 using namespace godot;
 
+Dictionary stringMapToDict(const NStringMap& map)
+{
+    Dictionary d;
+    for (auto it = map.begin(); it != map.end(); it++)
+    {
+        d[String(it->first.c_str())] = String(it->second.c_str());
+    }
+    return d;
+}
+
+NStringMap varMap(Dictionary vars)
+{
+    NStringMap v;
+    auto keys = vars.keys();
+    for (int i = 0; i < keys.size(); i++)
+    {
+        if (keys[i].get_type() != Variant::Type::STRING) break;
+        auto key = keys[i].operator String();
+        if (vars[key].get_type() != Variant::Type::STRING) break;
+            
+        v[key.utf8().get_data()] = vars[key].operator String().utf8().get_data();
+    }
+    return v;
+}
+
 Dictionary groupToDict(NGroup group)
 {
     Dictionary d;
@@ -113,13 +138,7 @@ Dictionary sessionToDict(NSessionPtr session)
     d["userId"] = String(session->getUserId().c_str());
     d["username"] = String(session->getUsername().c_str());
     d["isCreated"] = session->isCreated();
-    Dictionary vd;
-    auto vars = session->getVariables();
-    for (auto it = vars.begin(); it != vars.end(); it++)
-    {
-        vd[String(it->first.c_str())] = String(it->second.c_str());
-    }
-    d["variables"] = vd;
+    d["variables"] = stringMapToDict(session->getVariables());
     return d;
 }
 
@@ -146,19 +165,28 @@ Dictionary presenceEventToDict(const NChannelPresenceEvent& event)
     return d;
 }
 
-NStringMap varMap(Dictionary vars)
+Dictionary deviceToDict(const NAccountDevice& device)
 {
-    NStringMap v;
-    auto keys = vars.keys();
-    for (int i = 0; i < keys.size(); i++)
+    Dictionary d;
+    d["id"] = String(device.id.c_str());
+    d["vars"] = stringMapToDict(device.vars);
+    return d;
+}
+
+Dictionary accountToDict(const NAccount& account)
+{
+    Dictionary d;
+    d["user"] = userToDict(account.user);
+    d["email"] = String(account.email.c_str());
+    d["customId"] = String(account.custom_id.c_str());
+    d["wallet"] = String(account.wallet.c_str());
+    Array devices;
+    for (auto& device : account.devices)
     {
-        if (keys[i].get_type() != Variant::Type::STRING) break;
-        auto key = keys[i].operator String();
-        if (vars[key].get_type() != Variant::Type::STRING) break;
-            
-        v[key.utf8().get_data()] = vars[key].operator String().utf8().get_data();
+        devices.append(deviceToDict(device));
     }
-    return v;
+    d["devices"] = devices;
+    return d;
 }
 
 void NakamaGodot::_register_methods() 
@@ -210,6 +238,10 @@ void NakamaGodot::_register_methods()
     register_method("list_friends", &NakamaGodot::list_friends);
     register_method("remove_friends", &NakamaGodot::remove_friends);
     register_method("block_friends", &NakamaGodot::block_friends);
+
+    register_method("fetch_account", &NakamaGodot::fetch_account);
+    register_method("fetch_users", &NakamaGodot::fetch_users);
+    register_method("update_account", &NakamaGodot::update_account);
 
     // Signals
     register_signal<NakamaGodot>("realtime_client_connected");
@@ -272,6 +304,13 @@ void NakamaGodot::_register_methods()
     register_signal<NakamaGodot>("remove_friends_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("friends_blocked");
     register_signal<NakamaGodot>("block_friends_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+
+    register_signal<NakamaGodot>("account_fetched", "account", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("fetch_account_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("users_fetched", "users", GODOT_VARIANT_TYPE_ARRAY);
+    register_signal<NakamaGodot>("fetch_users_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("acount_updated");
+    register_signal<NakamaGodot>("update_account_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 }
 
 void NakamaGodot::_init() 
@@ -1191,6 +1230,89 @@ void NakamaGodot::block_friends(Array userIds, Array usernames)
         success_callback,
         err_callback
     );   
+}
+
+void NakamaGodot::fetch_account()
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("fetch_account_failed", error);
+    };
+    auto success_callback = [this](const NAccount& account)
+    {
+        emit_signal("account_fetched", accountToDict(account));
+    };
+    client->getAccount(
+        session,
+        success_callback,
+        err_callback
+    );
+}
+
+void NakamaGodot::fetch_users(Array ids, Array usernames, Array facebookIds)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("fetch_users_failed", error);
+    };
+    auto success_callback = [this](const NUsers& users)
+    {
+        Array arr;
+        for (auto& user : users.users)
+        {
+            arr.append(userToDict(user));
+        }
+        emit_signal("users_fetched", arr);
+    };
+    std::vector<std::string> idVec;
+    for (int i = 0; i < ids.size(); i++)
+    {
+        if (ids[i].get_type() == Variant::Type::STRING)
+            idVec.push_back(ids[i].operator String().utf8().get_data());
+    }
+    std::vector<std::string> usernameVec;
+    for (int i = 0; i < usernames.size(); i++)
+    {
+        if (usernames[i].get_type() == Variant::Type::STRING)
+            usernameVec.push_back(usernames[i].operator String().utf8().get_data());
+    }
+    std::vector<std::string> facebookIdVec;
+    for (int i = 0; i < facebookIds.size(); i++)
+    {
+        if (facebookIds[i].get_type() == Variant::Type::STRING)
+            facebookIdVec.push_back(facebookIds[i].operator String().utf8().get_data());
+    }
+    client->getUsers(
+        session,
+        idVec,
+        usernameVec,
+        facebookIdVec,
+        success_callback,
+        err_callback
+    );
+}
+
+void NakamaGodot::update_account(String username, String displayName, String avatarUrl, String lang, String location, String timezone)
+{
+    auto err_callback = [this](const NError& error)
+    {
+        emit_error_signal("update_account_failed", error);
+    };
+    auto success_callback = [this]()
+    {
+        emit_signal("account_updated");
+    };
+    client->updateAccount(
+        session,
+        username.utf8().get_data(),
+        displayName.utf8().get_data(),
+        avatarUrl.utf8().get_data(),
+        lang.utf8().get_data(),
+        location.utf8().get_data(),
+        timezone.utf8().get_data(),
+        success_callback,
+        err_callback
+    );
 }
 
 void NakamaGodot::emit_error_signal(String signal, const NError& error)

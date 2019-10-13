@@ -102,6 +102,11 @@ namespace godot {
             void list_friends(int limit = 0, int state = -1, String cursor = "");
             void remove_friends(Array userIds = Array(), Array usernames = Array());
             void block_friends(Array userIds = Array(), Array usernames = Array());
+
+            // Accounts
+            void fetch_account();
+            void fetch_users(Array ids = Array(), Array usernames = Array(), Array facebookIds = Array());
+            void update_account(String username, String displayName, String avatarUrl, String lang, String location, String timezone);
     };
 }
 
