@@ -164,7 +164,7 @@ void NakamaGodot::_register_methods()
     register_method("connect_realtime_client", &NakamaGodot::connect_realtime_client);
 
     register_method("join_chat_room", &NakamaGodot::join_chat_room);
-    
+    register_method("leave_chat_room", &NakamaGodot::leave_chat);
     register_method("write_chat_message", &NakamaGodot::write_chat_message);
 
     register_method("is_realtime_client_connected", &NakamaGodot::is_realtime_client_connected);
@@ -208,6 +208,8 @@ void NakamaGodot::_register_methods()
     register_signal<NakamaGodot>("chat_message_recieved", "message", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_joined", "channel", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_join_failed", "error", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("left_chat", "channelId", GODOT_VARIANT_TYPE_STRING);
+    register_signal<NakamaGodot>("leave_chat_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
     register_signal<NakamaGodot>("storage_read_complete", "objects", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("fetch_object_list_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
@@ -379,6 +381,23 @@ void NakamaGodot::join_chat_room(String roomName, int type, bool persist, bool h
         hidden,
         sucessJoinCallback,
         errorJoinCallback
+    );
+}
+
+void NakamaGodot::leave_chat(String channelId)
+{
+    auto err_callback = [this](const NRtError& error)
+    {
+        emit_rt_error_signal("leave_chat_failed", error);
+    };
+    auto success_callback = [this, channelId](){
+        emit_signal("left_chat", channelId);
+    };
+
+    rtClient->leaveChat(
+        channelId.utf8().get_data(),
+        success_callback, 
+        err_callback
     );
 }
 
