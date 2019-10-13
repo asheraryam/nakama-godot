@@ -14,13 +14,12 @@ Currently only builds on Win64. Building for linux, OSX, Android, etc.. should s
 
 ## Supported Features
 
-- [x] Email authentication
+- [x] Authentication
 - [x] Real time chat
 - [x] Storage APIs (R/W/D)
 - [x] RPCs
 - [x] Groups/Clans
 - [x] Friends
-- [x] Authentication types other than email
 - [x] User accounts
 - [x] In-app notifications
 - [ ] Status
