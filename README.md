@@ -20,10 +20,10 @@ Currently only builds on Win64. Building for linux, OSX, Android, etc.. should s
 - [x] RPCs
 - [x] Groups/Clans
 - [x] Friends
+- [x] Authentication types other than email
 - [ ] In-app notifications
 - [ ] Status
 - [ ] User accounts
-- [ ] Authentication types other than email
 - [ ] Leaderboards
 - [ ] Tournaments
 - [ ] Matchmaking
