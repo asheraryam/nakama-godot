@@ -39,9 +39,11 @@ namespace godot {
             void _init(); // our initializer called by Godot
             void _process(float delta);
 
+            // Clients
             void create_client_default();
             void create_client(String server_key, String server_host, int port);
-            void login_or_register();
+
+            // Auth
             int authenticate_email(String email, String password, String username = "", bool create = false, Dictionary vars = Dictionary());
             int authenticate_device(String deviceId, String username = "", bool create = false, Dictionary vars = Dictionary());
             int authenticate_facebook(String oauthToken, String username, bool create = false, bool importFriends = false, Dictionary vars = Dictionary());
