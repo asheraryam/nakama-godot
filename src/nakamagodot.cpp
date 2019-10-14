@@ -271,6 +271,7 @@ void NakamaGodot::_register_methods()
     register_signal<NakamaGodot>("authentication_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
 
     register_signal<NakamaGodot>("channel_presence_event", "event", GODOT_VARIANT_TYPE_DICTIONARY);
+    register_signal<NakamaGodot>("message_sent", "channelId", GODOT_VARIANT_TYPE_STRING, "messageId", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("write_chat_message_failed", "code", GODOT_VARIANT_TYPE_INT, "message", GODOT_VARIANT_TYPE_STRING);
     register_signal<NakamaGodot>("chat_message_recieved", "message", GODOT_VARIANT_TYPE_DICTIONARY);
     register_signal<NakamaGodot>("chat_joined", "channel", GODOT_VARIANT_TYPE_DICTIONARY);
@@ -642,10 +643,14 @@ void NakamaGodot::write_chat_message(String channelId, String content)
     {
         emit_rt_error_signal("write_chat_message_failed", error);
     };
+    auto success_callback = [this](const NChannelMessageAck& ack)
+    {
+        emit_signal("message_sent", String(ack.channelId.c_str()), String(ack.messageId.c_str()));
+    };
     rtClient->writeChatMessage(
         channelId.utf8().get_data(), 
         content.utf8().get_data(), 
-        nullptr, 
+        success_callback, 
         err_callback
     );
 }
