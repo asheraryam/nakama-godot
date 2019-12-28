@@ -9,7 +9,7 @@ env = DefaultEnvironment()
 # Define our options
 opts.Add(EnumVariable('target', "Compilation target", 'debug', ['debug', 'release']))
 # opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', 'x11', 'linux', 'osx']))
-opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows']))
+opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', "linux"]))
 opts.Add(EnumVariable('p', "Compilation target, alias for 'platform'", '', ['', 'windows', 'x11', 'linux', 'osx']))
 opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", 'no'))
 opts.Add(PathVariable('target_path', 'The path where the lib is installed.', 'demo/addons/nakama-godot/bin/'))
@@ -103,6 +103,44 @@ if env['platform'] == "windows":
         'winhttp',
         'advapi32',
     ]
+elif env['platform'] in ('x11', 'linux'):
+    env['target_path'] += 'linux/'
+    cpp_library += '.linux'
+    nakama_library_path += 'linux/x64/'
+    # This makes sure to keep the session environment variables on windows,
+    # that way you can run scons in a vs 2017 prompt and it will find all the required tools
+    env.Append(ENV = os.environ)
+
+    if env['target'] in ('debug', 'd'):
+        cpp_library += '.debug'
+    else:
+        cpp_library += '.release'
+
+    cpp_library += '.' + str(bits)
+
+    if env['target'] in ('debug', 'd'):
+        env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
+        env.Append(CXXFLAGS=['-std=c++17'])
+    else:
+        env.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
+        # env.Append(CXXFLAGS=['-std=c++17'])
+    nlibs = os.listdir(nakama_library_path)
+    nlibs = Glob(nakama_library_path + '/*.a')
+
+    lnlibs = [nakama_library_path + x for x in [
+        'libcrypto.a',
+        'libssl.a',
+        'libcpprest.a',
+        'libnakama-cpp.a',
+        'libprotobuf.a',
+    ]]
+
+    # nlibs = [
+    #     'bcrypt',
+    #     'crypt32',
+    #     'httpapi',
+    #     'advapi32',
+    # ]
 else:
     print("Invalid platform.")
     quit()
