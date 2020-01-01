@@ -119,11 +119,11 @@ elif env['platform'] in ('x11', 'linux'):
     cpp_library += '.' + str(bits)
 
     if env['target'] in ('debug', 'd'):
-        env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
-        env.Append(CXXFLAGS=['-std=c++17'])
+        env.Append(CCFLAGS=['-fPIC', '-g3', '-Og', '-std=c++11'])
+        #env.Append(CXXFLAGS=['-std=c++11'])
     else:
-        env.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
-        # env.Append(CXXFLAGS=['-std=c++17'])
+        env.Append(CCFLAGS=['-fPIC', '-g', '-O3', '-std=c++11'])
+        #env.Append(CXXFLAGS=['-std=c++11'])
     nlibs = os.listdir(nakama_library_path)
     nlibs = Glob(nakama_library_path + '/*.a')
 
