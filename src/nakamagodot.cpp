@@ -714,7 +714,7 @@ void NakamaGodot::store_objects(String collection, Dictionary kvps)
 
 void NakamaGodot::store_object_list(std::vector<NStorageObjectWrite> objects)
 {
-    auto success_callback = [this](const auto& _) 
+    auto success_callback = [this](const NStorageObjectAcks& _) 
     {
         emit_signal("storage_write_complete"); 
     };
