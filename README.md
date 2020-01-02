@@ -1,5 +1,7 @@
 # nakama-godot
 
+# (DEPRECATED) Use https://gitlab.com/dsnopek/godot-nakama-gdscript instead!
+
 Forked from https://github.com/opcon/nakama-godot
 
 Updated to work with nakama-cpp-sdk v142.
